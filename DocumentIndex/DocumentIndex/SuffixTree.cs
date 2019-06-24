@@ -13,7 +13,6 @@ namespace DocsReport
             public int Pos { get; set; }
             public int Len { get; set; }
             public int StrNumber {get; set;}
-            public int StrNumberPos { get; set; } 
             public bool Mark { get; set; }
 			public Node()
 			{
@@ -28,10 +27,10 @@ namespace DocsReport
         private readonly Func<TChar, bool> IsStrNumber;
 
 
-        public SuffixTree(IReadOnlyList<TChar> input, IEnumerable<TChar> inputAlphabet, Func<TChar, int> getStrNumber, Func<TChar, bool> getStrNumberPos)
+        public SuffixTree(IReadOnlyList<TChar> input, IEnumerable<TChar> inputAlphabet, Func<TChar, int> getStrNumber, Func<TChar, bool> isStrNumber)
 		{
             this.getStrNumber = getStrNumber;
-            this.IsStrNumber = getStrNumberPos;
+            this.IsStrNumber = isStrNumber;
             fake = new Node { Mark = false };
 			Root = new Node { Par = fake, Pos = 0, Len = 1, Mark = true };
 			foreach (var c in inputAlphabet)
@@ -66,27 +65,16 @@ namespace DocsReport
 					parse = parse.Next[input[i]];
 					newNode.Pos += parse.Len;
 					i += parse.Len;
-                    newNode.StrNumberPos -= parse.Len;
                 }
                 parse.Plink[c] = newNode;
                 Attach(newNode, split, newNode.Pos - splitEdgeStart, input[splitEdgeStart]);
 				Attach(splitChild, newNode, splitChild.Pos - newNode.Pos, input[newNode.Pos]);
-                splitChild.StrNumberPos -= newNode.Pos - splitEdgeStart;
                 split = newNode;
 				newNode = new Node();
 			}
 			last.Plink[c] = newNode;
 			Attach(newNode, split, input.Count - i, input[i]);
-            if (IsStrNumber(c))
-            {
-                newNode.StrNumber = getStrNumber(c);
-                newNode.StrNumberPos = 0;
-            }
-            else
-            {
-                newNode.StrNumber = last.StrNumber;
-                newNode.StrNumberPos = last.StrNumberPos + 1;
-            }
+            newNode.StrNumber = IsStrNumber(c) ? getStrNumber(c) : last.StrNumber;
             newNode.Pos = input.Count;
 			newNode.Mark = true;
             
